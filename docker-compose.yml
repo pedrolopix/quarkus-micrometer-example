@@ -1,0 +1,40 @@
+version: "3.1"
+
+
+services:
+  prometheus:
+    image: prom/prometheus
+    user: root
+    volumes:
+      - ./infra/prometheus/:/etc/prometheus/
+#      - ./infra/data/prometheus/:/prometheus/
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=2y'
+    extra_hosts:
+      - "quarkus-dev:${HOST_IP}"
+    ports:
+      - 9090:9090
+    networks:
+      - micrometer-network
+
+  grafana:
+    image: grafana/grafana
+    user: root
+    depends_on:
+      - prometheus
+    ports:
+      - 3000:3000
+    volumes:
+#      - ./infra/data/grafana:/var/lib/grafana
+      - ./infra/grafana/provisioning/:/etc/grafana/provisioning/
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=true
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+    networks:
+      - micrometer-network
+
+networks:
+  micrometer-network:
